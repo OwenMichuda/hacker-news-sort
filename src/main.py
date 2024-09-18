@@ -1,5 +1,7 @@
 import requests
 import html
+import asyncio
+import aiohttp
 
 from bs4 import BeautifulSoup
 
@@ -32,9 +34,19 @@ def get_comments(comment_ids, base_url):
     return comments
 
 
-def filter_comments(comments, keyword):
-    keyword = keyword.lower()
-    return [clean_html(comment) for comment in comments if keyword in comment.lower()]
+def filter_comments(comments, keywords, filter_words):
+    keywords = [keyword.lower() for keyword in keywords]
+    filter_words = [filter_word.lower() for filter_word in filter_words]
+
+    filtered_comments = []
+    for comment in comments:
+        decoded_comment = html.unescape(comment).lower()
+        if any(filter_word in decoded_comment for filter_word in filter_words):
+            continue
+        elif any(keyword in decoded_comment for keyword in keywords):
+            filtered_comments.append(clean_html(comment))
+
+    return filtered_comments
 
 
 def clean_html(html_content):
@@ -46,9 +58,7 @@ def clean_html(html_content):
         if isinstance(element, str):
             cleaned_text += element
         elif element.name == 'a':
-            link_text = element.get_text()
-            link_url = element.get('href', '')
-            cleaned_text += f"[{link_text}]({link_url})"
+            continue
         elif element.name == 'p':
             cleaned_text += "\n"
 
@@ -58,11 +68,12 @@ def clean_html(html_content):
 if __name__ == '__main__':
     base_url = "https://hacker-news.firebaseio.com/v0/item/"
     who_is_hiring_id = "41425910"
-    city = "remote"
+    keywords = ["remote", "chicago"]
+    filter_words = ["Europe", "Switzerland"]
 
     comment_ids = get_comment_ids(who_is_hiring_id, base_url)
     comments = get_comments(comment_ids, base_url)
-    filtered_comments = filter_comments(comments, city)
+    filtered_comments = filter_comments(comments, keywords, filter_words)
 
     for comment in filtered_comments:
         print(comment)

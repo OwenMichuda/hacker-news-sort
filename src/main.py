@@ -1,32 +1,32 @@
-import requests
-import html
 import asyncio
 import aiohttp
-
+import html
 from bs4 import BeautifulSoup
 
-def fetch_data(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Request failed with status code: {response.status_code}")
-        return None
+
+async def fetch_data(session, url):
+    async with session.get(url) as response:
+        if response.status == 200:
+            return await response.json()
+        else:
+            print(f"Request failed with status code: {response.status}")
+            return None
 
 
-def get_comment_ids(who_is_hiring_id, base_url):
+async def get_comment_ids(who_is_hiring_id, base_url, session):
     url = f"{base_url}{who_is_hiring_id}.json"
-    data = fetch_data(url)
+    data = await fetch_data(session, url)
     if data:
         return data.get('kids', [])
     return []
 
 
-def get_comments(comment_ids, base_url):
+async def get_comments(comment_ids, base_url, session):
+    tasks = [fetch_data(session, f"{base_url}{comment_id}.json") for comment_id in comment_ids]
+    responses = await asyncio.gather(*tasks)
+
     comments = []
-    for comment_id in comment_ids:
-        url = f"{base_url}{comment_id}.json"
-        data = fetch_data(url)
+    for data in responses:
         if data:
             text = data.get('text')
             if text is not None:
@@ -65,16 +65,21 @@ def clean_html(html_content):
     return cleaned_text
 
 
-if __name__ == '__main__':
+async def main():
     base_url = "https://hacker-news.firebaseio.com/v0/item/"
     who_is_hiring_id = "41425910"
     keywords = ["remote", "chicago"]
     filter_words = ["Europe", "Switzerland"]
 
-    comment_ids = get_comment_ids(who_is_hiring_id, base_url)
-    comments = get_comments(comment_ids, base_url)
-    filtered_comments = filter_comments(comments, keywords, filter_words)
+    async with aiohttp.ClientSession() as session:
+        comment_ids = await get_comment_ids(who_is_hiring_id, base_url, session)
+        comments = await get_comments(comment_ids, base_url, session)
+        filtered_comments = filter_comments(comments, keywords, filter_words)
 
-    for comment in filtered_comments:
-        print(comment)
-        print("-------------------------------------------------------------------------------------------------------")
+        for comment in filtered_comments:
+            print(comment)
+            print("---------------------------------------------------------------------------------------------------")
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

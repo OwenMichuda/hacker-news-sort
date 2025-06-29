@@ -3,7 +3,6 @@ import aiohttp
 import html
 from bs4 import BeautifulSoup
 
-
 async def fetch_data(session, url):
     async with session.get(url) as response:
         if response.status == 200:
@@ -64,12 +63,24 @@ def clean_html(html_content):
 
     return cleaned_text
 
+async def get_filtered_comments():
+    base_url = "https://hacker-news.firebaseio.com/v0/item/"
+    who_is_hiring_id = "44159528"
+    keywords = ["remote", "boston", "new york", "ny", "nyc", "dc", "washington dc", "washington d.c.", "washington"]
+    filter_words = ["Europe", "Switzerland", "Canada"]
+
+    async with aiohttp.ClientSession() as session:
+        comment_ids = await get_comment_ids(who_is_hiring_id, base_url, session)
+        comments = await get_comments(comment_ids, base_url, session)
+        filtered_comments = filter_comments(comments, keywords, filter_words)
+        return filtered_comments
+
 
 async def main():
     base_url = "https://hacker-news.firebaseio.com/v0/item/"
-    who_is_hiring_id = "41425910"
-    keywords = ["remote", "chicago"]
-    filter_words = ["Europe", "Switzerland"]
+    who_is_hiring_id = "44159528"
+    keywords = ["remote", "boston", "new york", "ny", "nyc", "dc", "washington dc", "washington d.c.", "washington"]
+    filter_words = ["Europe", "Switzerland", "Canada"]
 
     async with aiohttp.ClientSession() as session:
         comment_ids = await get_comment_ids(who_is_hiring_id, base_url, session)

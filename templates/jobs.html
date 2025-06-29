@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hacker News Who is Hiring</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        .job { border-bottom: 1px solid #ccc; margin-bottom: 2em; padding-bottom: 1em; }
+        pre {
+            white-space: pre-wrap;      /* Wraps long lines */
+            word-break: break-word;     /* Breaks long words if needed */
+            max-width: 100%;            /* Prevents overflow */
+        }
+    </style>
+</head>
+<body>
+    <h1>Filtered Job Postings</h1>
+    {% for job in jobs %}
+        <div class="job">
+            <pre>{{ job }}</pre>
+        </div>
+    {% else %}
+        <p>No jobs found.</p>
+    {% endfor %}
+</body>
+</html>
